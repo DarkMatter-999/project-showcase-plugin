@@ -13,5 +13,14 @@ class Plugin
 {
     use Singleton;
 
+    /**
+     * Constructor for the Plugin.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        Post_Type_Project::get_instance();
+    }
 
 }
