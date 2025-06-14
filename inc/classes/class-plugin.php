@@ -21,6 +21,7 @@ class Plugin
     public function __construct()
     {
         Post_Type_Project::get_instance();
+        Blocks::get_instance();
     }
 
 }
