@@ -3,17 +3,62 @@ import {
   InspectorControls,
   InnerBlocks,
 } from "@wordpress/block-editor";
-import { TextControl, PanelBody } from "@wordpress/components";
+import { ComboboxControl, PanelBody } from "@wordpress/components";
 import { __ } from "@wordpress/i18n";
 
 import "./editor.css";
-import { useState, useEffect } from "@wordpress/element";
+import { useState, useEffect, useRef } from "@wordpress/element";
 import { useSelect } from "@wordpress/data";
 
 const Edit = ({ attributes, setAttributes }) => {
   const { title, excerpt, thumbnail, thumbnailUrl, link, id } = attributes;
 
   const [postId, setPostId] = useState(id);
+
+  const [searchKey, setSearchKey] = useState(title);
+  const [debouncedSearchKey, setDebouncedSearchKey] = useState(searchKey);
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearchKey(searchKey);
+    }, 500);
+
+    return () => {
+      clearTimeout(debounceRef.current);
+    };
+  }, [searchKey]);
+
+  const searchResults = useSelect(
+    (select) => {
+      if (!debouncedSearchKey || debouncedSearchKey.length < 2) {
+        return [];
+      }
+
+      const projects = select("core").getEntityRecords(
+        "postType",
+        "dm_project",
+        {
+          search: debouncedSearchKey,
+          per_page: 5,
+        },
+      );
+
+      if (projects && projects.length) {
+        return projects.map((post) => ({
+          label: post.title.raw,
+          value: post.id,
+        }));
+      }
+
+      return [];
+    },
+    [debouncedSearchKey],
+  );
 
   const project = useSelect(
     (select) => {
@@ -63,7 +108,10 @@ const Edit = ({ attributes, setAttributes }) => {
     setPostId(value);
   };
 
-  const isLoading = postId && project === null;
+  const onChangeSearchKey = (value) => {
+    setSearchKey(value);
+  };
+
   const isNotFound = postId && project === undefined;
   const hasProjectData = !!project && id && !!imageUrl?.source_url;
 
@@ -75,6 +123,7 @@ const Edit = ({ attributes, setAttributes }) => {
           mediaId: project.featured_media,
           mediaUrl: imageUrl.source_url,
           mediaType: "image",
+          imageFill: true,
         },
         [
           ["core/heading", { content: project.title.raw, level: 3 }],
@@ -95,29 +144,17 @@ const Edit = ({ attributes, setAttributes }) => {
     <div {...useBlockProps()}>
       <InspectorControls>
         <PanelBody>
-          <TextControl
-            __nextHasNoMarginBottom
+          <ComboboxControl
             __next40pxDefaultSize
-            label={__("Project Post", "dm-project-plugin")}
+            __nextHasNoMarginBottom
+            label={__("Search Projects", "dm-project-plugin")}
             value={postId}
             onChange={onChangePostId}
+            onFilterValueChange={onChangeSearchKey}
+            options={searchResults}
           />
         </PanelBody>
       </InspectorControls>
-
-      {isLoading && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            marginTop: "10px",
-          }}
-        >
-          <Spinner />
-          <span>{__("Loading project data...", "dm-project-plugin")}</span>
-        </div>
-      )}
 
       {hasProjectData ? (
         <InnerBlocks
