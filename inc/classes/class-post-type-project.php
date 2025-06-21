@@ -82,7 +82,7 @@ class Post_Type_Project
     {
         add_meta_box(
             'dm_project_link',
-            __('External Project Link', 'dm_project_plugin'),
+            __('External Project Link', 'dm-project-plugin'),
             array($this, 'project_link_meta_box_html'),
             $this::POST_TYPE_PROJECT,
             'side'
@@ -101,7 +101,7 @@ class Post_Type_Project
 
         ?>
         <div>
-            <label for="dm_project_link_field"><?php esc_html_e('External Link to Project repo', 'dm_project_plugin'); ?></label>
+            <label for="dm_project_link_field"><?php esc_html_e('External Link to Project repo', 'dm-project-plugin'); ?></label>
             <input type="text" name="dm_project_link" id="dm_project_link_field" value="<?php echo esc_url(get_post_meta($post->ID, $this::PROJECT_LINK_META, true)); ?>">
         </div>
         <?php
