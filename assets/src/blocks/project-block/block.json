@@ -33,6 +33,10 @@
     "link": {
       "type": "string",
       "default": ""
+    },
+    "externalLink": {
+      "type": "string",
+      "default": ""
     }
   }
 }

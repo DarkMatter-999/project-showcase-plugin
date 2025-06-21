@@ -90,7 +90,8 @@ const Edit = ({ attributes, setAttributes }) => {
         excerpt: project?.excerpt?.raw,
         thumbnail: `${project?.featured_media}`,
         thumbnailUrl: imageUrl?.source_url,
-        link: project?.meta?.dm_project_link,
+        link: project.link,
+        externalLink: project?.meta?.dm_project_link,
         id: postId,
       });
     } else {
@@ -126,7 +127,13 @@ const Edit = ({ attributes, setAttributes }) => {
           imageFill: true,
         },
         [
-          ["core/heading", { content: project.title.raw, level: 3 }],
+          [
+            "core/heading",
+            {
+              content: `<a href="${project.link}">${project.title.raw}</a>`,
+              level: 3,
+            },
+          ],
           ["core/paragraph", { content: project.excerpt.raw }],
           [
             "core/button",
