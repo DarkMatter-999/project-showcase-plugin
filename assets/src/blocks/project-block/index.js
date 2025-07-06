@@ -1,13 +1,13 @@
-import { registerBlockType } from "@wordpress/blocks";
+import { registerBlockType } from '@wordpress/blocks';
 
-import metadata from "./block.json";
+import metadata from './block.json';
 
-import Edit from "./edit";
-import Save from "./save";
+import Edit from './edit';
+import Save from './save';
 
-import "./style.css";
+import './style.css';
 
-registerBlockType(metadata.name, {
-  edit: Edit,
-  save: Save,
-});
+registerBlockType( metadata.name, {
+	edit: Edit,
+	save: Save,
+} );
