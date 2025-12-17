@@ -37,6 +37,10 @@
     "externalLink": {
       "type": "string",
       "default": ""
+    },
+    "useExternalLink": {
+      "type": "boolean",
+      "default": true
     }
   }
 }

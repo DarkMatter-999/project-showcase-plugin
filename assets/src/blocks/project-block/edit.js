@@ -3,17 +3,18 @@ import {
 	InspectorControls,
 	InnerBlocks,
 } from '@wordpress/block-editor';
-import { ComboboxControl, PanelBody } from '@wordpress/components';
+import { ComboboxControl, PanelBody, ToggleControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
 import './editor.css';
 import { useState, useEffect, useRef } from '@wordpress/element';
-import { useSelect } from '@wordpress/data';
+import { useSelect, useDispatch } from '@wordpress/data';
 
-const Edit = ( { attributes, setAttributes } ) => {
-	const { title, excerpt, thumbnail, thumbnailUrl, link, id } = attributes; // eslint-disable-line no-unused-vars
+const Edit = ( { attributes, setAttributes, clientId } ) => {
+	const { title, excerpt, thumbnail, thumbnailUrl, link, id, externalLink, useExternalLink } = attributes; // eslint-disable-line no-unused-vars
 
 	const [ postId, setPostId ] = useState( id );
+	const [ externalLinkToggle, setExternalLinkToggle] = useState( useExternalLink || false );
 
 	const [ searchKey, setSearchKey ] = useState( title );
 	const [ debouncedSearchKey, setDebouncedSearchKey ] = useState( searchKey );
@@ -98,6 +99,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 				thumbnailUrl: imageUrl?.source_url,
 				link: project.link,
 				externalLink: project?.meta?.dm_project_link,
+				useExternalLink: externalLinkToggle,
 				id: postId,
 			} );
 		} else if ( id !== postId ) {
@@ -105,7 +107,33 @@ const Edit = ( { attributes, setAttributes } ) => {
 				id: postId,
 			} );
 		}
-	}, [ project, postId, imageUrl, id ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ project, postId, imageUrl, id, externalLinkToggle ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const { updateBlockAttributes } = useDispatch( 'core/block-editor' );
+
+	const innerBlockList = useSelect( ( select ) =>
+        select( 'core/block-editor' ).getBlock( clientId )?.innerBlocks,
+        [ clientId ]
+    );
+
+ useEffect( () => {
+        if ( ! project || ! innerBlockList || innerBlockList.length === 0 ) return;
+
+        const targetUrl = externalLinkToggle ? project.meta?.dm_project_link : project.link;
+        if( !targetUrl ) return;
+
+        const mediaTextBlock = innerBlockList[0];
+
+        if ( mediaTextBlock?.innerBlocks ) {
+
+            const buttonBlock = mediaTextBlock.innerBlocks.find( block => block.name === 'core/button' );
+
+            if ( buttonBlock?.attributes?.url !== targetUrl ) {
+                updateBlockAttributes( buttonBlock.clientId, { url: targetUrl } );
+            }
+        }
+
+    }, [ externalLinkToggle, project, innerBlockList, clientId ] );
 
 	let template = [];
 
@@ -117,11 +145,17 @@ const Edit = ( { attributes, setAttributes } ) => {
 		setSearchKey( value );
 	};
 
+	const onChangeExternalLinkToggle = ( value ) => {
+    setExternalLinkToggle( value );
+  }
+
 	const isNotFound = postId && project === undefined;
 	const hasProjectData = !! project && id && !! imageUrl?.source_url;
 
 	if ( hasProjectData ) {
-		template = [
+    const buttonUrl = externalLinkToggle ? project.meta?.dm_project_link : project.link;
+
+    template = [
 			[
 				'core/media-text',
 				{
@@ -143,7 +177,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 						'core/button',
 						{
 							text: __( 'View Project', 'dm-project-plugin' ),
-							url: project.meta?.dm_project_link,
+							url: buttonUrl,
 						},
 					],
 				],
@@ -157,12 +191,17 @@ const Edit = ( { attributes, setAttributes } ) => {
 				<PanelBody>
 					<ComboboxControl
 						__next40pxDefaultSize
-						__nextHasNoMarginBottom
 						label={ __( 'Search Projects', 'dm-project-plugin' ) }
 						value={ postId }
 						onChange={ onChangePostId }
 						onFilterValueChange={ onChangeSearchKey }
 						options={ searchResults }
+					/>
+					<ToggleControl
+					  __nextHasNoMarginBottom
+						checked={ externalLinkToggle }
+						onChange={ onChangeExternalLinkToggle }
+						label={ __( 'Use external link', 'dm-project-plugin' ) }
 					/>
 				</PanelBody>
 			</InspectorControls>
